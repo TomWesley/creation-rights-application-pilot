@@ -121,12 +121,30 @@ export const AppProvider = ({ children }) => {
     }
     
     if (savedAuth) {
-      const authState = JSON.parse(savedAuth);
-      setIsAuthenticated(authState.isAuthenticated);
-      setUserType(authState.userType);
-      setCurrentUser(authState.currentUser);
+      try {
+        const authState = JSON.parse(savedAuth);
+        if (authState.isAuthenticated) {
+          setIsAuthenticated(true);
+          setUserType(authState.userType || 'creator');
+          setCurrentUser(authState.currentUser);
+          
+          // Make sure we have a valid user object
+          if (!authState.currentUser) {
+            const defaultUser = authState.userType === 'agency' 
+              ? sampleUsers.agency 
+              : sampleUsers.creator;
+            setCurrentUser(defaultUser);
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing auth state:', error);
+        // Clear corrupted auth state
+        localStorage.removeItem('authState');
+      }
     }
   }, []);
+  
+  
 
   // Save state to localStorage
   useEffect(() => {
@@ -173,15 +191,26 @@ export const AppProvider = ({ children }) => {
   const handleLogin = (e) => {
     e.preventDefault();
     
+    let user;
     if (loginCredentials.accountType === 'creator') {
-      setCurrentUser(sampleUsers.creator);
+      user = sampleUsers.creator;
       setUserType('creator');
     } else {
-      setCurrentUser(sampleUsers.agency);
+      user = sampleUsers.agency;
       setUserType('agency');
     }
     
+    setCurrentUser(user);
     setIsAuthenticated(true);
+    
+    // Immediately save to localStorage to ensure persistence
+    const authState = {
+      isAuthenticated: true,
+      userType: loginCredentials.accountType,
+      currentUser: user
+    };
+    localStorage.setItem('authState', JSON.stringify(authState));
+    
     setShowLoginModal(false);
     setActiveView('dashboard');
   };
@@ -190,6 +219,9 @@ export const AppProvider = ({ children }) => {
     setIsAuthenticated(false);
     setCurrentUser(null);
     setShowLoginModal(false);
+    
+    // Clear auth state from localStorage
+    localStorage.removeItem('authState');
   };
 
   const handleInputChange = (e) => {
