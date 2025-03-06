@@ -33,6 +33,7 @@ import {
   UserPlus,
   Building2
 } from 'lucide-react';
+import './CreationRightsApp.css';
 
 // Mock authentication and user data for demonstration
 const CreationRightsApp = () => {
@@ -398,34 +399,34 @@ const CreationRightsApp = () => {
     }
     
     return (
-      <ul className={`pl-${depth > 0 ? 4 : 0}`}>
+      <ul className={`folder-list depth-${depth}`}>
         {folderList.map(folder => {
           const hasChildren = folders.some(f => f.parentId === folder.id);
           const isExpanded = expandedFolders[folder.id];
           
           return (
-            <li key={folder.id} className="my-1">
+            <li key={folder.id} className="folder-item">
               <div 
-                className={`flex items-center py-1 px-2 rounded-md hover:bg-gray-100 cursor-pointer ${
-                  currentFolder && currentFolder.id === folder.id ? 'bg-blue-50 text-blue-600' : ''
+                className={`folder-row ${
+                  currentFolder && currentFolder.id === folder.id ? 'folder-active' : ''
                 }`}
               >
                 {hasChildren ? (
                   <button
                     onClick={() => toggleFolderExpanded(folder.id)}
-                    className="mr-1 text-gray-500 hover:text-gray-700"
+                    className="folder-toggle"
                   >
-                    {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    {isExpanded ? <ChevronDown className="folder-icon-small" /> : <ChevronRight className="folder-icon-small" />}
                   </button>
                 ) : (
-                  <span className="ml-5 mr-1"></span>
+                  <span className="folder-toggle-placeholder"></span>
                 )}
                 
-                <Folder className="h-4 w-4 mr-2 text-blue-500" />
+                <Folder className="folder-icon" />
                 
                 <span 
                   onClick={() => navigateToFolder(folder)} 
-                  className="flex-1 truncate"
+                  className="folder-name"
                 >
                   {folder.name}
                 </span>
@@ -436,9 +437,9 @@ const CreationRightsApp = () => {
                       e.stopPropagation();
                       deleteFolder(folder.id);
                     }}
-                    className="ml-2 text-gray-400 hover:text-red-500"
+                    className="folder-delete"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="folder-icon-small" />
                   </button>
                 )}
               </div>
@@ -490,32 +491,32 @@ const CreationRightsApp = () => {
   const getCreationTypeIcon = (type) => {
     switch (type.toLowerCase()) {
       case 'image':
-        return <ImageIcon className="h-5 w-5 text-blue-500" />;
+        return <ImageIcon className="creation-type-icon image-icon" />;
       case 'text':
-        return <FileText className="h-5 w-5 text-green-500" />;
+        return <FileText className="creation-type-icon text-icon" />;
       case 'music':
-        return <Music className="h-5 w-5 text-purple-500" />;
+        return <Music className="creation-type-icon music-icon" />;
       case 'video':
-        return <Video className="h-5 w-5 text-red-500" />;
+        return <Video className="creation-type-icon video-icon" />;
       case 'software':
-        return <Code className="h-5 w-5 text-gray-500" />;
+        return <Code className="creation-type-icon software-icon" />;
       default:
-        return <FileText className="h-5 w-5 text-gray-500" />;
+        return <FileText className="creation-type-icon default-icon" />;
     }
   };
 
   // Render the login form
   const renderLoginForm = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <Card className="w-full max-w-md mx-4">
+    <div className="modal-overlay">
+      <Card className="login-modal">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
+          <CardTitle className="login-title">Sign In</CardTitle>
           <CardDescription>
             Sign in to your Creation Rights account
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="login-form">
             <div>
               <Label htmlFor="email">Email</Label>
               <Input
@@ -549,17 +550,17 @@ const CreationRightsApp = () => {
                 name="accountType"
                 value={loginCredentials.accountType}
                 onChange={handleLoginInput}
-                className="w-full p-2 border rounded"
+                className="account-type-select"
               >
                 <option value="creator">Creator</option>
                 <option value="agency">Agency</option>
               </select>
             </div>
             
-            <Button type="submit" className="w-full">Sign In</Button>
+            <Button type="submit" className="login-button">Sign In</Button>
           </form>
         </CardContent>
-        <CardFooter className="flex justify-between">
+        <CardFooter className="login-footer">
           <Button variant="ghost" onClick={() => setShowLoginModal(false)}>
             Cancel
           </Button>
@@ -571,8 +572,8 @@ const CreationRightsApp = () => {
 
   // Render new folder modal
   const renderNewFolderModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <Card className="w-full max-w-md mx-4">
+    <div className="modal-overlay">
+      <Card className="folder-modal">
         <CardHeader>
           <CardTitle>Create New Folder</CardTitle>
           <CardDescription>
@@ -582,7 +583,7 @@ const CreationRightsApp = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="folder-form">
             <div>
               <Label htmlFor="folderName">Folder Name</Label>
               <Input
@@ -595,7 +596,7 @@ const CreationRightsApp = () => {
             </div>
           </div>
         </CardContent>
-        <CardFooter className="flex justify-end space-x-2">
+        <CardFooter className="folder-modal-footer">
           <Button variant="ghost" onClick={() => setShowNewFolderModal(false)}>
             Cancel
           </Button>
@@ -609,32 +610,32 @@ const CreationRightsApp = () => {
 
   // Render dashboard view
   const renderDashboard = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="dashboard">
+      <div className="stats-container">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Total Creations</CardTitle>
+          <CardHeader className="stats-header">
+            <CardTitle className="stats-title">Total Creations</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{creations.length}</p>
+            <p className="stats-value">{creations.length}</p>
           </CardContent>
         </Card>
         
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Total Folders</CardTitle>
+          <CardHeader className="stats-header">
+            <CardTitle className="stats-title">Total Folders</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{folders.length}</p>
+            <p className="stats-value">{folders.length}</p>
           </CardContent>
         </Card>
         
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Recent Activity</CardTitle>
+          <CardHeader className="stats-header">
+            <CardTitle className="stats-title">Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-500">Last update: Today</p>
+            <p className="activity-date">Last update: Today</p>
           </CardContent>
         </Card>
       </div>
@@ -644,18 +645,18 @@ const CreationRightsApp = () => {
           <CardTitle>Recent Creations</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="recent-creations">
             {creations.slice(0, 5).map(creation => (
-              <div key={creation.id} className="flex items-center p-2 hover:bg-gray-50 rounded-md">
+              <div key={creation.id} className="recent-creation-item">
                 {getCreationTypeIcon(creation.type)}
-                <div className="ml-3">
-                  <p className="font-medium">{creation.title}</p>
-                  <p className="text-sm text-gray-500">Created: {creation.dateCreated}</p>
+                <div className="recent-creation-info">
+                  <p className="recent-creation-title">{creation.title}</p>
+                  <p className="recent-creation-date">Created: {creation.dateCreated}</p>
                 </div>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="ml-auto"
+                  className="view-button"
                   onClick={() => handleEdit(creation)}
                 >
                   View
@@ -672,15 +673,15 @@ const CreationRightsApp = () => {
       </Card>
       
       {userType === 'agency' && (
-        <Card>
+        <Card className="creator-management-card">
           <CardHeader>
             <CardTitle>Creator Management</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="p-4 bg-gray-50 rounded text-center">
-              <Users className="h-12 w-12 mx-auto text-blue-500 mb-2" />
-              <p className="text-lg font-medium">Manage Your Creators</p>
-              <p className="text-gray-500 mb-4">Connect with creators and manage rights assignments</p>
+            <div className="creator-management">
+              <Users className="creator-icon" />
+              <p className="creator-management-title">Manage Your Creators</p>
+              <p className="creator-management-desc">Connect with creators and manage rights assignments</p>
               <Button>View Creators</Button>
             </div>
           </CardContent>
@@ -694,40 +695,40 @@ const CreationRightsApp = () => {
     const creationTypes = ['Image', 'Text', 'Music', 'Video', 'Software', 'Other'];
     
     return (
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="creations-view">
+        <div className="creations-header">
           <div>
-            <h1 className="text-2xl font-bold mb-1">
+            <h1 className="creations-title">
               {currentFolder ? currentFolder.name : 'All Creations'}
             </h1>
             
             {/* Breadcrumb navigation */}
             {breadcrumbs.length > 0 && (
-              <nav className="text-sm mb-4">
-                <ol className="flex items-center space-x-1">
+              <nav className="breadcrumb-nav">
+                <ol className="breadcrumb-list">
                   <li>
                     <button 
                       onClick={() => navigateToFolder(null)}
-                      className="text-blue-500 hover:text-blue-700"
+                      className="breadcrumb-root"
                     >
                       Root
                     </button>
                   </li>
                   {breadcrumbs.slice(0, -1).map((folder, i) => (
-                    <li key={folder.id} className="flex items-center">
-                      <span className="mx-1 text-gray-500">/</span>
+                    <li key={folder.id} className="breadcrumb-item">
+                      <span className="breadcrumb-separator">/</span>
                       <button 
                         onClick={() => navigateToFolder(folder)}
-                        className="text-blue-500 hover:text-blue-700"
+                        className="breadcrumb-link"
                       >
                         {folder.name}
                       </button>
                     </li>
                   ))}
                   {breadcrumbs.length > 0 && (
-                    <li className="flex items-center">
-                      <span className="mx-1 text-gray-500">/</span>
-                      <span className="text-gray-700">{breadcrumbs[breadcrumbs.length - 1].name}</span>
+                    <li className="breadcrumb-item">
+                      <span className="breadcrumb-separator">/</span>
+                      <span className="breadcrumb-current">{breadcrumbs[breadcrumbs.length - 1].name}</span>
                     </li>
                   )}
                 </ol>
@@ -735,27 +736,27 @@ const CreationRightsApp = () => {
             )}
           </div>
           
-          <div className="flex space-x-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <div className="creations-actions">
+            <div className="search-container">
+              <Search className="search-icon" />
               <Input
                 placeholder="Search creations..."
-                className="pl-8"
+                className="search-input"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button onClick={() => setActiveView('newCreation')}>
-              <Plus className="h-4 w-4 mr-2" /> New Creation
+            <Button onClick={() => setActiveView('newCreation')} className="new-creation-button">
+              <Plus className="button-icon" /> New Creation
             </Button>
-            <Button variant="outline" onClick={() => setShowNewFolderModal(true)}>
-              <FolderPlus className="h-4 w-4 mr-2" /> New Folder
+            <Button variant="outline" onClick={() => setShowNewFolderModal(true)} className="new-folder-button">
+              <FolderPlus className="button-icon" /> New Folder
             </Button>
           </div>
         </div>
         
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="tabs-header">
             <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
               <TabsList>
                 <TabsTrigger value="all">All</TabsTrigger>
@@ -768,56 +769,56 @@ const CreationRightsApp = () => {
           </CardHeader>
           <CardContent>
             {filteredCreations.length === 0 ? (
-              <div className="text-center p-8 bg-gray-50 rounded">
-                <AlertCircle className="mx-auto h-12 w-12 text-gray-400" />
-                <p className="mt-2 text-xl font-medium text-gray-500">No creations found</p>
-                <p className="text-gray-500 mb-4">
+              <div className="empty-state">
+                <AlertCircle className="empty-icon" />
+                <p className="empty-title">No creations found</p>
+                <p className="empty-message">
                   {searchQuery 
                     ? "Try adjusting your search query" 
                     : "Add your first creation or create a new folder"}
                 </p>
-                <div className="flex justify-center space-x-4">
+                <div className="empty-actions">
                   <Button onClick={() => setActiveView('newCreation')}>
-                    <Plus className="h-4 w-4 mr-2" /> Add Creation
+                    <Plus className="button-icon" /> Add Creation
                   </Button>
                   <Button variant="outline" onClick={() => setShowNewFolderModal(true)}>
-                    <FolderPlus className="h-4 w-4 mr-2" /> New Folder
+                    <FolderPlus className="button-icon" /> New Folder
                   </Button>
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="creation-list">
                 {filteredCreations.map(creation => (
-                  <Card key={creation.id} className="overflow-hidden">
-                    <div className="flex flex-col md:flex-row">
-                      <div className="flex items-center p-4 md:w-64 bg-gray-50">
+                  <Card key={creation.id} className="creation-card">
+                    <div className="creation-content">
+                      <div className="creation-info-sidebar">
                         <div>
                           {getCreationTypeIcon(creation.type)}
                         </div>
-                        <div className="ml-3">
-                          <p className="font-medium">{creation.title}</p>
-                          <p className="text-sm text-gray-500">{creation.dateCreated}</p>
+                        <div className="creation-meta">
+                          <p className="creation-title">{creation.title}</p>
+                          <p className="creation-date">{creation.dateCreated}</p>
                         </div>
                       </div>
-                      <div className="flex-1 p-4">
+                      <div className="creation-details">
                         {creation.rights && (
-                          <div className="mb-2">
-                            <p className="text-sm text-gray-500 font-medium">Rights</p>
+                          <div className="creation-rights">
+                            <p className="details-label">Rights</p>
                             <p>{creation.rights}</p>
                           </div>
                         )}
                         {creation.notes && (
-                          <div className="mb-2">
-                            <p className="text-sm text-gray-500 font-medium">Notes</p>
-                            <p className="line-clamp-2">{creation.notes}</p>
+                          <div className="creation-notes">
+                            <p className="details-label">Notes</p>
+                            <p className="notes-text">{creation.notes}</p>
                           </div>
                         )}
                         {creation.tags && creation.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
+                          <div className="creation-tags">
                             {creation.tags.map(tag => (
                               <span 
                                 key={tag} 
-                                className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded"
+                                className="tag"
                               >
                                 {tag}
                               </span>
@@ -825,22 +826,22 @@ const CreationRightsApp = () => {
                           </div>
                         )}
                       </div>
-                      <div className="flex md:flex-col justify-end p-4 space-x-2 md:space-x-0 md:space-y-2">
+                      <div className="creation-actions">
                         <Button 
                           variant="outline" 
                           size="sm" 
                           onClick={() => handleEdit(creation)}
-                          className="flex items-center"
+                          className="edit-button"
                         >
-                          <Edit className="h-4 w-4 mr-1" /> Edit
+                          <Edit className="button-icon-small" /> Edit
                         </Button>
                         <Button 
                           variant="destructive" 
                           size="sm" 
                           onClick={() => handleDelete(creation.id)}
-                          className="flex items-center"
+                          className="delete-button"
                         >
-                          <Trash2 className="h-4 w-4 mr-1" /> Delete
+                          <Trash2 className="button-icon-small" /> Delete
                         </Button>
                       </div>
                     </div>
@@ -859,13 +860,13 @@ const CreationRightsApp = () => {
     const creationTypes = ['Image', 'Text', 'Music', 'Video', 'Software', 'Other'];
     
     return (
-      <div>
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">
+      <div className="creation-form-container">
+        <div className="form-header">
+          <h1 className="form-title">
             {editMode ? 'Edit Creation' : 'New Creation'}
           </h1>
           {currentFolder && (
-            <p className="text-gray-500">
+            <p className="folder-path">
               In folder: {breadcrumbs.map(f => f.name).join(' / ')}
               {breadcrumbs.length > 0 && ' / '}
               {currentFolder.name}
@@ -874,9 +875,9 @@ const CreationRightsApp = () => {
         </div>
         
         <Card>
-          <CardContent className="pt-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <CardContent className="creation-form-content">
+            <form onSubmit={handleSubmit} className="creation-form">
+              <div className="form-grid">
                 <div>
                   <Label htmlFor="title">Title *</Label>
                   <Input 
@@ -896,7 +897,7 @@ const CreationRightsApp = () => {
                     name="type"
                     value={currentCreation.type}
                     onChange={handleInputChange}
-                    className="w-full p-2 border rounded"
+                    className="type-select"
                     required
                   >
                     <option value="">Select a type</option>
@@ -924,7 +925,7 @@ const CreationRightsApp = () => {
                     name="folderId"
                     value={currentCreation.folderId}
                     onChange={handleInputChange}
-                    className="w-full p-2 border rounded"
+                    className="folder-select"
                   >
                     <option value="">Root (No Folder)</option>
                     {folders.map(folder => (
@@ -947,6 +948,7 @@ const CreationRightsApp = () => {
                   onChange={handleInputChange}
                   placeholder="Copyright details, licensing terms, etc."
                   rows={3}
+                  className="rights-textarea"
                 />
               </div>
 
@@ -959,24 +961,25 @@ const CreationRightsApp = () => {
                   onChange={handleInputChange}
                   placeholder="Additional information about your creation"
                   rows={3}
+                  className="notes-textarea"
                 />
               </div>
 
               <div>
                 <Label htmlFor="tags">Tags</Label>
-                <div className="flex flex-wrap gap-2 mb-2">
+                <div className="tags-container">
                   {currentCreation.tags.map(tag => (
                     <div 
                       key={tag} 
-                      className="bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded flex items-center"
+                      className="tag-item"
                     >
                       {tag}
                       <button
                         type="button"
                         onClick={() => removeTag(tag)}
-                        className="ml-1 text-blue-500 hover:text-blue-700"
+                        className="tag-remove"
                       >
-                        <X className="h-3 w-3" />
+                        <X className="tag-remove-icon" />
                       </button>
                     </div>
                   ))}
@@ -985,10 +988,11 @@ const CreationRightsApp = () => {
                   id="tags"
                   placeholder="Add tags (press Enter after each tag)"
                   onKeyDown={handleTagInput}
+                  className="tags-input"
                 />
               </div>
 
-              <div className="flex justify-end space-x-2">
+              <div className="form-actions">
                 <Button 
                   type="button" 
                   variant="outline" 
@@ -996,10 +1000,11 @@ const CreationRightsApp = () => {
                     resetForm();
                     setActiveView('myCreations');
                   }}
+                  className="cancel-button"
                 >
                   Cancel
                 </Button>
-                <Button type="submit">
+                <Button type="submit" className="submit-button">
                   {editMode ? 'Update Creation' : 'Create'}
                 </Button>
               </div>
@@ -1012,38 +1017,48 @@ const CreationRightsApp = () => {
 
   // Main application layout
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="app-container">
       {/* Show login modal if not authenticated */}
       {!isAuthenticated && (
-        <div className="flex flex-col min-h-screen">
+        <div className="landing-container">
           {/* Header for landing page */}
-        
-          <main className="flex-1">
-            <div className="container mx-auto px-4 py-12">
-              <div className="max-w-4xl mx-auto text-center mb-12">
-                <h1 className="text-4xl sm:text-5xl font-bold mb-4">
+          <header className="landing-header">
+            <div className="header-content">
+              <div className="logo-container">
+                <img src="/crlogo.svg" alt="Creation Rights Logo" className="logo" />
+                
+              </div>
+              <Button onClick={() => setShowLoginModal(true)} className="signin-button">Sign In</Button>
+            </div>
+          </header>
+          
+          {/* Landing page content */}
+          <main className="landing-main">
+            <div className="landing-content">
+              <div className="hero-section">
+                <h1 className="hero-title">
                   Protect Your Creative Works
                 </h1>
-                <p className="text-xl text-gray-600 mb-8">
+                <p className="hero-subtitle">
                   Easily manage, track, and secure your intellectual property rights
                   across all your creative endeavors.
                 </p>
-                <div className="flex flex-col sm:flex-row justify-center gap-4">
-                  <Button size="lg" onClick={() => setShowLoginModal(true)}>
+                <div className="hero-actions">
+                  <Button size="lg" onClick={() => setShowLoginModal(true)} className="get-started-button">
                     Get Started
                   </Button>
-                  <Button size="lg" variant="outline">
+                  <Button size="lg" variant="outline" className="learn-more-button">
                     Learn More
                   </Button>
                 </div>
               </div>
               
               {/* Feature highlights */}
-              <div className="grid md:grid-cols-3 gap-8 mb-12">
-                <Card>
+              <div className="features-section">
+                <Card className="feature-card">
                   <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <FileText className="h-5 w-5 text-blue-500 mr-2" />
+                    <CardTitle className="feature-title">
+                      <FileText className="feature-icon" />
                       Organize Your Creations
                     </CardTitle>
                   </CardHeader>
@@ -1052,10 +1067,10 @@ const CreationRightsApp = () => {
                   </CardContent>
                 </Card>
                 
-                <Card>
+                <Card className="feature-card">
                   <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Users className="h-5 w-5 text-blue-500 mr-2" />
+                    <CardTitle className="feature-title">
+                      <Users className="feature-icon" />
                       Creator & Agency Access
                     </CardTitle>
                   </CardHeader>
@@ -1064,10 +1079,10 @@ const CreationRightsApp = () => {
                   </CardContent>
                 </Card>
                 
-                <Card>
+                <Card className="feature-card">
                   <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <BarChart2 className="h-5 w-5 text-blue-500 mr-2" />
+                    <CardTitle className="feature-title">
+                      <BarChart2 className="feature-icon" />
                       Track Your Rights
                     </CardTitle>
                   </CardHeader>
@@ -1080,22 +1095,20 @@ const CreationRightsApp = () => {
           </main>
           
           {/* Footer */}
-          <footer className="bg-gray-800 text-white py-8">
-            <div className="container mx-auto px-4">
-              <div className="flex flex-col md:flex-row justify-between items-center">
-                <div className="mb-4 md:mb-0">
-                  <div className="flex items-center">
-                    <FileText className="h-6 w-6 text-blue-400 mr-2" />
-                    <span className="text-lg font-bold">Creation Rights</span>
-                  </div>
-                  <p className="text-sm text-gray-400">Copyright © 2025</p>
+          <footer className="app-footer">
+            <div className="footer-content">
+              <div className="footer-brand">
+                <div className="footer-logo">
+                  <img src="/crlogo.svg" alt="Creation Rights Logo" className="footer-logo-img" />
+                  
                 </div>
-                <div className="flex space-x-4">
-                  <a href="#" className="text-gray-400 hover:text-white">About</a>
-                  <a href="#" className="text-gray-400 hover:text-white">Contact</a>
-                  <a href="#" className="text-gray-400 hover:text-white">Privacy</a>
-                  <a href="#" className="text-gray-400 hover:text-white">Terms</a>
-                </div>
+                <p className="footer-copyright">Copyright © 2025</p>
+              </div>
+              <div className="footer-links">
+                <a href="#" className="footer-link">About</a>
+                <a href="#" className="footer-link">Contact</a>
+                <a href="#" className="footer-link">Privacy</a>
+                <a href="#" className="footer-link">Terms</a>
               </div>
             </div>
           </footer>
@@ -1106,68 +1119,62 @@ const CreationRightsApp = () => {
       
       {/* Authenticated app layout */}
       {isAuthenticated && (
-        <div className="flex flex-col min-h-screen">
+        <div className="app-layout">
           {/* Top navigation bar */}
-          <header className="bg-white shadow">
-            <div className="container mx-auto px-4 py-2 flex justify-between items-center">
-              <div className="flex items-center">
+          <header className="app-header">
+            <div className="header-container">
+              <div className="header-left">
                 <button 
-                  className="md:hidden mr-2"
+                  className="mobile-menu-toggle"
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 >
-                  <Menu className="h-6 w-6" />
+                  <Menu className="menu-icon" />
                 </button>
                 
-                <div className="flex items-center">
-                  <FileText className="h-6 w-6 text-blue-600 mr-2" />
-                  <span className="text-lg font-bold hidden sm:inline">Creation Rights</span>
+                <div className="app-brand">
+                  <img src="/crlogo.svg" alt="Creation Rights Logo" className="app-logo" />
+                  
                 </div>
               </div>
               
-              <div className="flex items-center">
-                <div className="mr-4 text-sm hidden md:block">
+              <div className="header-right">
+                <div className="user-info">
                   <span>Hello, </span>
-                  <span className="font-medium">{currentUser?.name}</span>
-                  <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                  <span className="user-name">{currentUser?.name}</span>
+                  <span className="user-type">
                     {userType === 'creator' ? 'Creator' : 'Agency'}
                   </span>
                 </div>
                 
-                <Button variant="ghost" size="sm" onClick={handleLogout}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Sign Out</span>
+                <Button variant="ghost" size="sm" onClick={handleLogout} className="logout-button">
+                  <LogOut className="logout-icon" />
+                  <span className="logout-text">Sign Out</span>
                 </Button>
               </div>
             </div>
           </header>
           
-          <div className="flex-1 flex">
+          <div className="app-content">
             {/* Sidebar navigation */}
-            <aside 
-              className={`
-                ${isMobileMenuOpen ? 'block' : 'hidden'} 
-                md:block fixed inset-y-0 left-0 md:relative z-10
-                w-64 bg-white shadow-md pt-16 md:pt-0 transform transition-transform duration-300 ease-in-out
-              `}
-            >
-              <div className="p-4">
-                <nav className="space-y-6">
+            <aside className={`app-sidebar ${isMobileMenuOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+              <div className="sidebar-content">
+                <nav className="sidebar-nav">
                   <div>
                     <button
-                      className="flex items-center text-gray-700 hover:text-blue-600 font-medium mb-2"
+                      className="nav-item"
                       onClick={() => {
                         setActiveView('dashboard');
                         setIsMobileMenuOpen(false);
                       }}
                     >
-                      <Home className="h-5 w-5 mr-2" />
+                      <Home className="nav-icon" />
                       Dashboard
                     </button>
                   </div>
                   
-                  <div className="space-y-1">
+                  <div className="nav-group">
                     <button
-                      className="flex items-center text-gray-700 hover:text-blue-600 font-medium mb-2"
+                      className="nav-item"
                       onClick={() => {
                         setCurrentFolder(null);
                         setBreadcrumbs([]);
@@ -1175,11 +1182,11 @@ const CreationRightsApp = () => {
                         setIsMobileMenuOpen(false);
                       }}
                     >
-                      <FileText className="h-5 w-5 mr-2" />
+                      <FileText className="nav-icon" />
                       My Creations
                     </button>
                     
-                    <div className="ml-2">
+                    <div className="folder-tree">
                       {renderFolderStructure()}
                     </div>
                   </div>
@@ -1187,13 +1194,13 @@ const CreationRightsApp = () => {
                   {userType === 'agency' && (
                     <div>
                       <button
-                        className="flex items-center text-gray-700 hover:text-blue-600 font-medium mb-2"
+                        className="nav-item"
                         onClick={() => {
                           setActiveView('creators');
                           setIsMobileMenuOpen(false);
                         }}
                       >
-                        <Users className="h-5 w-5 mr-2" />
+                        <Users className="nav-icon" />
                         Creators
                       </button>
                     </div>
@@ -1201,13 +1208,13 @@ const CreationRightsApp = () => {
                   
                   <div>
                     <button
-                      className="flex items-center text-gray-700 hover:text-blue-600 font-medium"
+                      className="nav-item"
                       onClick={() => {
                         setActiveView('settings');
                         setIsMobileMenuOpen(false);
                       }}
                     >
-                      <Settings className="h-5 w-5 mr-2" />
+                      <Settings className="nav-icon" />
                       Settings
                     </button>
                   </div>
@@ -1218,44 +1225,44 @@ const CreationRightsApp = () => {
             {/* Mobile overlay to close menu when clicked */}
             {isMobileMenuOpen && (
               <div 
-                className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-0"
+                className="sidebar-overlay"
                 onClick={() => setIsMobileMenuOpen(false)}
               />
             )}
             
             {/* Main content area */}
-            <main className="flex-1 p-6">
-              <div className="container mx-auto">
+            <main className="main-content">
+              <div className="content-container">
                 {activeView === 'dashboard' && renderDashboard()}
                 {activeView === 'myCreations' && renderMyCreations()}
                 {(activeView === 'newCreation' || activeView === 'editCreation') && renderCreationForm()}
                 {activeView === 'creators' && userType === 'agency' && (
-                  <div className="text-center p-12 bg-gray-50 rounded-lg">
-                    <Building2 className="h-16 w-16 text-blue-500 mx-auto mb-4" />
-                    <h2 className="text-2xl font-bold mb-2">Creator Management</h2>
-                    <p className="text-gray-600 mb-6">
+                  <div className="creators-dashboard">
+                    <Building2 className="creators-icon" />
+                    <h2 className="creators-title">Creator Management</h2>
+                    <p className="creators-subtitle">
                       Connect with creators and manage rights assignments
                     </p>
-                    <div className="flex justify-center space-x-4">
-                      <Button>
-                        <UserPlus className="h-4 w-4 mr-2" /> Add Creator
+                    <div className="creators-actions">
+                      <Button className="add-creator-button">
+                        <UserPlus className="button-icon" /> Add Creator
                       </Button>
-                      <Button variant="outline">
-                        <User className="h-4 w-4 mr-2" /> View Creators
+                      <Button variant="outline" className="view-creators-button">
+                        <User className="button-icon" /> View Creators
                       </Button>
                     </div>
                   </div>
                 )}
                 {activeView === 'settings' && (
-                  <div className="space-y-6">
-                    <h1 className="text-2xl font-bold mb-6">Account Settings</h1>
-                    <Card>
+                  <div className="settings-view">
+                    <h1 className="settings-title">Account Settings</h1>
+                    <Card className="settings-card">
                       <CardHeader>
                         <CardTitle>Profile Information</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="profile-settings">
+                          <div className="profile-form">
                             <div>
                               <Label htmlFor="name">Name</Label>
                               <Input id="name" defaultValue={currentUser?.name} />
@@ -1265,17 +1272,17 @@ const CreationRightsApp = () => {
                               <Input id="email" defaultValue={currentUser?.email} />
                             </div>
                           </div>
-                          <Button className="mt-4">Save Changes</Button>
+                          <Button className="save-profile-button">Save Changes</Button>
                         </div>
                       </CardContent>
                     </Card>
                     
-                    <Card>
+                    <Card className="settings-card">
                       <CardHeader>
                         <CardTitle>Change Password</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="space-y-4">
+                        <div className="password-settings">
                           <div>
                             <Label htmlFor="currentPassword">Current Password</Label>
                             <Input id="currentPassword" type="password" />
@@ -1288,7 +1295,7 @@ const CreationRightsApp = () => {
                             <Label htmlFor="confirmPassword">Confirm New Password</Label>
                             <Input id="confirmPassword" type="password" />
                           </div>
-                          <Button className="mt-4">Update Password</Button>
+                          <Button className="password-button">Update Password</Button>
                         </div>
                       </CardContent>
                     </Card>
