@@ -1,6 +1,16 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+// src/contexts/AppContext.jsx
 
-// Sample data
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { 
+  saveUserData, 
+  loadUserData, 
+  saveFolders, 
+  loadFolders, 
+  saveCreations, 
+  loadCreations 
+} from '../services/api';
+
+// Sample data - used as fallback or initial data
 const initialFolders = [
   { id: 'f1', name: 'Images', parentId: null },
   { id: 'f2', name: 'Written Works', parentId: null },
@@ -67,6 +77,7 @@ export const AppProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userType, setUserType] = useState('creator');
   const [currentUser, setCurrentUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   // UI state
   const [activeView, setActiveView] = useState('dashboard');
@@ -102,60 +113,171 @@ export const AppProvider = ({ children }) => {
     accountType: 'creator' 
   });
 
-  // Load initial state
+  // Load authentication state from localStorage
   useEffect(() => {
-    const savedFolders = localStorage.getItem('folders');
-    const savedCreations = localStorage.getItem('creations');
-    const savedAuth = localStorage.getItem('authState');
-    
-    if (savedFolders) {
-      setFolders(JSON.parse(savedFolders));
-    } else {
-      setFolders(initialFolders);
-    }
-    
-    if (savedCreations) {
-      setCreations(JSON.parse(savedCreations));
-    } else {
-      setCreations(sampleCreations);
-    }
-    
-    if (savedAuth) {
+    const loadAuthState = async () => {
+      setIsLoading(true);
+      
       try {
-        const authState = JSON.parse(savedAuth);
-        if (authState.isAuthenticated) {
-          setIsAuthenticated(true);
-          setUserType(authState.userType || 'creator');
-          setCurrentUser(authState.currentUser);
+        const savedAuth = localStorage.getItem('authState');
+        
+        if (savedAuth) {
+          const authState = JSON.parse(savedAuth);
           
-          // Make sure we have a valid user object
-          if (!authState.currentUser) {
-            const defaultUser = authState.userType === 'agency' 
-              ? sampleUsers.agency 
-              : sampleUsers.creator;
-            setCurrentUser(defaultUser);
+          if (authState.isAuthenticated && authState.currentUser) {
+            setIsAuthenticated(true);
+            setUserType(authState.userType || 'creator');
+            setCurrentUser(authState.currentUser);
+            
+            // Load initial state from localStorage
+            const savedFolders = localStorage.getItem('folders');
+            if (savedFolders) {
+              setFolders(JSON.parse(savedFolders));
+            } else {
+              setFolders(initialFolders);
+            }
+            
+            const savedCreations = localStorage.getItem('creations');
+            if (savedCreations) {
+              setCreations(JSON.parse(savedCreations));
+            } else {
+              setCreations(sampleCreations);
+            }
+            
+            // Try to load from server in the background
+            loadUserDataFromServer(authState.currentUser.id);
           }
         }
       } catch (error) {
-        console.error('Error parsing auth state:', error);
-        // Clear corrupted auth state
+        console.error('Error loading auth state:', error);
         localStorage.removeItem('authState');
+      } finally {
+        setIsLoading(false);
       }
-    }
+    };
+    
+    loadAuthState();
   }, []);
-  
-  
 
-  // Save state to localStorage
+  // Load user data from server
+  const loadUserDataFromServer = async (userId) => {
+    try {
+      // Try to load folders
+      const userFolders = await loadFolders(userId);
+      if (userFolders) {
+        setFolders(userFolders);
+      } else {
+        // If no folders on server, save initial ones
+        await saveFolders(userId, initialFolders);
+      }
+      
+      // Try to load creations
+      const userCreations = await loadCreations(userId);
+      if (userCreations) {
+        setCreations(userCreations);
+      } else {
+        // If no creations on server, save initial ones
+        await saveCreations(userId, sampleCreations);
+      }
+    } catch (error) {
+      console.error('Error loading user data from server:', error);
+    }
+  };
+
+  // Save folders when they change
   useEffect(() => {
-    localStorage.setItem('folders', JSON.stringify(folders));
-    localStorage.setItem('creations', JSON.stringify(creations));
-    localStorage.setItem('authState', JSON.stringify({
-      isAuthenticated,
-      userType,
-      currentUser
-    }));
-  }, [folders, creations, isAuthenticated, userType, currentUser]);
+    const syncFolders = async () => {
+      if (isAuthenticated && currentUser && folders.length > 0) {
+        localStorage.setItem('folders', JSON.stringify(folders));
+        
+        // Save to server silently (don't block UI)
+        saveFolders(currentUser.id, folders).catch(err => {
+          console.error('Error saving folders to server:', err);
+        });
+      }
+    };
+    
+    syncFolders();
+  }, [folders, isAuthenticated, currentUser]);
+
+  // Save creations when they change
+  useEffect(() => {
+    const syncCreations = async () => {
+      if (isAuthenticated && currentUser && creations.length > 0) {
+        localStorage.setItem('creations', JSON.stringify(creations));
+        
+        // Save to server silently (don't block UI)
+        saveCreations(currentUser.id, creations).catch(err => {
+          console.error('Error saving creations to server:', err);
+        });
+      }
+    };
+    
+    syncCreations();
+  }, [creations, isAuthenticated, currentUser]);
+
+  // Save auth state to localStorage
+  useEffect(() => {
+    if (isAuthenticated && currentUser) {
+      const authState = {
+        isAuthenticated,
+        userType,
+        currentUser
+      };
+      localStorage.setItem('authState', JSON.stringify(authState));
+    }
+  }, [isAuthenticated, userType, currentUser]);
+
+  // Actions
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      let user;
+      if (loginCredentials.accountType === 'creator') {
+        user = sampleUsers.creator;
+        setUserType('creator');
+      } else {
+        user = sampleUsers.agency;
+        setUserType('agency');
+      }
+      
+      setCurrentUser(user);
+      setIsAuthenticated(true);
+      
+      // Save auth state to localStorage
+      const authState = {
+        isAuthenticated: true,
+        userType: loginCredentials.accountType,
+        currentUser: user
+      };
+      localStorage.setItem('authState', JSON.stringify(authState));
+      
+      // Save user data to server
+      await saveUserData(user.id, user);
+      
+      // Load user data from server
+      await loadUserDataFromServer(user.id);
+      
+      setShowLoginModal(false);
+      setActiveView('dashboard');
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Error during login. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    setShowLoginModal(false);
+    
+    // Clear auth state from localStorage
+    localStorage.removeItem('authState');
+  };
 
   // Filter creations based on current folder and search
   const getFilteredCreations = () => {
@@ -185,43 +307,6 @@ export const AppProvider = ({ children }) => {
     }
     
     return filtered;
-  };
-
-  // Actions
-  const handleLogin = (e) => {
-    e.preventDefault();
-    
-    let user;
-    if (loginCredentials.accountType === 'creator') {
-      user = sampleUsers.creator;
-      setUserType('creator');
-    } else {
-      user = sampleUsers.agency;
-      setUserType('agency');
-    }
-    
-    setCurrentUser(user);
-    setIsAuthenticated(true);
-    
-    // Immediately save to localStorage to ensure persistence
-    const authState = {
-      isAuthenticated: true,
-      userType: loginCredentials.accountType,
-      currentUser: user
-    };
-    localStorage.setItem('authState', JSON.stringify(authState));
-    
-    setShowLoginModal(false);
-    setActiveView('dashboard');
-  };
-
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setCurrentUser(null);
-    setShowLoginModal(false);
-    
-    // Clear auth state from localStorage
-    localStorage.removeItem('authState');
   };
 
   const handleInputChange = (e) => {
@@ -277,31 +362,42 @@ export const AppProvider = ({ children }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setIsLoading(true);
     
-    if (!currentCreation.title || !currentCreation.type) {
-      alert('Title and type are required fields');
-      return;
-    }
-    
-    if (editMode) {
-      // Update existing creation
-      const updatedCreations = creations.map(creation => 
-        creation.id === currentCreation.id ? currentCreation : creation
-      );
+    try {
+      if (!currentCreation.title || !currentCreation.type) {
+        alert('Title and type are required fields');
+        setIsLoading(false);
+        return;
+      }
+      
+      let updatedCreations;
+      
+      if (editMode) {
+        // Update existing creation
+        updatedCreations = creations.map(creation => 
+          creation.id === currentCreation.id ? currentCreation : creation
+        );
+      } else {
+        // Add new creation with unique ID
+        const newCreation = {
+          ...currentCreation,
+          id: `c${Date.now()}`,
+          dateCreated: currentCreation.dateCreated || new Date().toISOString().split('T')[0],
+          folderId: currentCreation.folderId || (currentFolder ? currentFolder.id : '')
+        };
+        updatedCreations = [...creations, newCreation];
+      }
+      
       setCreations(updatedCreations);
-    } else {
-      // Add new creation with unique ID
-      const newCreation = {
-        ...currentCreation,
-        id: `c${Date.now()}`,
-        dateCreated: currentCreation.dateCreated || new Date().toISOString().split('T')[0],
-        folderId: currentCreation.folderId || (currentFolder ? currentFolder.id : '')
-      };
-      setCreations([...creations, newCreation]);
+      resetForm();
+      setActiveView('myCreations');
+    } catch (error) {
+      console.error('Error saving creation:', error);
+      alert('Error saving your creation. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-    
-    resetForm();
-    setActiveView('myCreations');
   };
 
   const handleEdit = (creation) => {
@@ -312,7 +408,17 @@ export const AppProvider = ({ children }) => {
 
   const handleDelete = (id) => {
     if (window.confirm('Are you sure you want to delete this creation?')) {
-      setCreations(creations.filter(creation => creation.id !== id));
+      setIsLoading(true);
+      
+      try {
+        const updatedCreations = creations.filter(creation => creation.id !== id);
+        setCreations(updatedCreations);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error deleting creation:', error);
+        alert('Error deleting creation. Please try again.');
+        setIsLoading(false);
+      }
     }
   };
 
@@ -322,40 +428,60 @@ export const AppProvider = ({ children }) => {
       return;
     }
     
-    const newFolder = {
-      id: `f${Date.now()}`,
-      name: newFolderName,
-      parentId: currentFolder ? currentFolder.id : null
-    };
+    setIsLoading(true);
     
-    setFolders([...folders, newFolder]);
-    setNewFolderName('');
-    setShowNewFolderModal(false);
+    try {
+      const newFolder = {
+        id: `f${Date.now()}`,
+        name: newFolderName,
+        parentId: currentFolder ? currentFolder.id : null
+      };
+      
+      const updatedFolders = [...folders, newFolder];
+      setFolders(updatedFolders);
+      
+      setNewFolderName('');
+      setShowNewFolderModal(false);
+    } catch (error) {
+      console.error('Error creating folder:', error);
+      alert('Error creating folder. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const deleteFolder = (folderId) => {
     if (window.confirm('Are you sure you want to delete this folder and all contents?')) {
-      // Remove the folder
-      const updatedFolders = folders.filter(folder => folder.id !== folderId);
+      setIsLoading(true);
       
-      // Remove all subfolders
-      const allSubFolderIds = getSubFolderIds(folderId);
-      const foldersAfterSubFolderRemoval = updatedFolders.filter(
-        folder => !allSubFolderIds.includes(folder.id)
-      );
-      
-      // Remove creations in those folders
-      const updatedCreations = creations.filter(
-        creation => creation.folderId !== folderId && !allSubFolderIds.includes(creation.folderId)
-      );
-      
-      setFolders(foldersAfterSubFolderRemoval);
-      setCreations(updatedCreations);
-      
-      // If we deleted the current folder, reset to root
-      if (currentFolder && (currentFolder.id === folderId || allSubFolderIds.includes(currentFolder.id))) {
-        setCurrentFolder(null);
-        setBreadcrumbs([]);
+      try {
+        // Remove the folder
+        const updatedFolders = folders.filter(folder => folder.id !== folderId);
+        
+        // Remove all subfolders
+        const allSubFolderIds = getSubFolderIds(folderId);
+        const foldersAfterSubFolderRemoval = updatedFolders.filter(
+          folder => !allSubFolderIds.includes(folder.id)
+        );
+        
+        // Remove creations in those folders
+        const updatedCreations = creations.filter(
+          creation => creation.folderId !== folderId && !allSubFolderIds.includes(creation.folderId)
+        );
+        
+        setFolders(foldersAfterSubFolderRemoval);
+        setCreations(updatedCreations);
+        
+        // If we deleted the current folder, reset to root
+        if (currentFolder && (currentFolder.id === folderId || allSubFolderIds.includes(currentFolder.id))) {
+          setCurrentFolder(null);
+          setBreadcrumbs([]);
+        }
+      } catch (error) {
+        console.error('Error deleting folder:', error);
+        alert('Error deleting folder. Please try again.');
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -430,6 +556,7 @@ export const AppProvider = ({ children }) => {
       searchQuery,
       newFolderName,
       loginCredentials,
+      isLoading,
       
       // Methods
       setIsAuthenticated,
@@ -449,6 +576,7 @@ export const AppProvider = ({ children }) => {
       setSearchQuery,
       setNewFolderName,
       setLoginCredentials,
+      setIsLoading,
       getFilteredCreations,
       handleLogin,
       handleLogout,
