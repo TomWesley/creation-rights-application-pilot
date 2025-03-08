@@ -1,5 +1,7 @@
+// src/components/shared/CreationCard.jsx
+
 import React from 'react';
-import { Edit, Trash2, FileText, ImageIcon, Music, Video, Code } from 'lucide-react';
+import { Edit, Trash2, FileText, ImageIcon, Music, Video, Code, ExternalLink, Youtube } from 'lucide-react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { useAppContext } from '../../contexts/AppContext';
@@ -8,7 +10,13 @@ const CreationCard = ({ creation }) => {
   const { handleEdit, handleDelete } = useAppContext();
 
   // Get icon for creation type
-  const getCreationTypeIcon = (type) => {
+  const getCreationTypeIcon = (type, source) => {
+    // If it's from YouTube, use the YouTube icon
+    if (source === 'YouTube') {
+      return <Youtube className="creation-type-icon text-red-500" />;
+    }
+    
+    // Otherwise use the normal type icons
     switch (type.toLowerCase()) {
       case 'image':
         return <ImageIcon className="creation-type-icon image-icon" />;
@@ -25,16 +33,42 @@ const CreationCard = ({ creation }) => {
     }
   };
   
+  // Determine if this is a YouTube video
+  const isYouTubeVideo = creation.source === 'YouTube';
+  
   return (
     <Card className="creation-card">
       <div className="creation-content">
+        {/* YouTube videos show the thumbnail */}
+        {isYouTubeVideo && creation.thumbnailUrl ? (
+          <div className="creation-thumbnail" style={{ width: '160px', minWidth: '160px' }}>
+            <img 
+              src={creation.thumbnailUrl} 
+              alt={creation.title} 
+              className="w-full h-full object-cover"
+              style={{ height: '90px' }}
+            />
+          </div>
+        ) : null}
+        
         <div className="creation-info-sidebar">
           <div>
-            {getCreationTypeIcon(creation.type)}
+            {getCreationTypeIcon(creation.type, creation.source)}
           </div>
           <div className="creation-meta">
             <p className="creation-title">{creation.title}</p>
             <p className="creation-date">{creation.dateCreated}</p>
+            
+            {isYouTubeVideo && creation.sourceUrl && (
+              <a 
+                href={creation.sourceUrl} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-xs flex items-center text-blue-600 hover:underline mt-1"
+              >
+                <ExternalLink className="w-3 h-3 mr-1" /> View on YouTube
+              </a>
+            )}
           </div>
         </div>
         <div className="creation-details">
@@ -60,6 +94,12 @@ const CreationCard = ({ creation }) => {
                   {tag}
                 </span>
               ))}
+              
+              {isYouTubeVideo && (
+                <span className="tag bg-red-100 text-red-700">
+                  YouTube
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -80,6 +120,17 @@ const CreationCard = ({ creation }) => {
           >
             <Trash2 className="button-icon-small" /> Delete
           </Button>
+          
+          {isYouTubeVideo && creation.sourceUrl && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => window.open(creation.sourceUrl, '_blank')}
+              className="view-button"
+            >
+              <ExternalLink className="button-icon-small" /> View
+            </Button>
+          )}
         </div>
       </div>
     </Card>

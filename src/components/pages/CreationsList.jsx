@@ -1,5 +1,7 @@
-import React from 'react';
-import { Plus, FolderPlus, Search, AlertCircle } from 'lucide-react';
+// src/components/pages/CreationsList.jsx
+
+import React, { useState } from 'react';
+import { Plus, FolderPlus, Search, AlertCircle, Youtube } from 'lucide-react';
 import { Card, CardHeader, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -20,6 +22,8 @@ const CreationsList = () => {
     setShowNewFolderModal,
     getFilteredCreations
   } = useAppContext();
+  
+  const [showImportDropdown, setShowImportDropdown] = useState(false);
   
   const filteredCreations = getFilteredCreations();
   
@@ -75,9 +79,43 @@ const CreationsList = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button onClick={() => setActiveView('newCreation')} className="new-creation-button">
-            <Plus className="button-icon" /> New Creation
-          </Button>
+          
+          <div className="relative">
+            <Button 
+              onClick={() => setShowImportDropdown(!showImportDropdown)} 
+              className="new-creation-button"
+            >
+              <Plus className="button-icon" /> Add Creation
+            </Button>
+            
+            {showImportDropdown && (
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-10 border">
+                <div className="py-1">
+                  <button
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                    onClick={() => {
+                      setActiveView('newCreation');
+                      setShowImportDropdown(false);
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Manually
+                  </button>
+                  <button
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                    onClick={() => {
+                      setActiveView('youtubeImport');
+                      setShowImportDropdown(false);
+                    }}
+                  >
+                    <Youtube className="w-4 h-4 mr-2" />
+                    Import from YouTube
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          
           <Button variant="outline" onClick={() => setShowNewFolderModal(true)} className="new-folder-button">
             <FolderPlus className="button-icon" /> New Folder
           </Button>
@@ -109,6 +147,9 @@ const CreationsList = () => {
               <div className="empty-actions">
                 <Button onClick={() => setActiveView('newCreation')}>
                   <Plus className="button-icon" /> Add Creation
+                </Button>
+                <Button variant="outline" onClick={() => setActiveView('youtubeImport')}>
+                  <Youtube className="button-icon" /> Import from YouTube
                 </Button>
                 <Button variant="outline" onClick={() => setShowNewFolderModal(true)}>
                   <FolderPlus className="button-icon" /> New Folder

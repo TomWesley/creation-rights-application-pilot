@@ -1,3 +1,5 @@
+// src/App.jsx
+
 import React from 'react';
 import { AppProvider, useAppContext } from './contexts/AppContext';
 import LandingPage from './components/pages/LandingPage';
@@ -10,6 +12,8 @@ import CreationForm from './components/pages/CreationForm';
 import CreatorManagement from './components/pages/CreatorManagement';
 import Settings from './components/pages/Settings';
 import NewFolderModal from './components/shared/NewFolderModal';
+import LoadingIndicator from './components/shared/LoadingIndicator';
+import YouTubeImport from './components/pages/YouTubeImport';
 import './CreationRightsApp.css';
 
 const AppContent = () => {
@@ -17,12 +21,18 @@ const AppContent = () => {
     isAuthenticated, 
     userType,
     activeView,
-    showNewFolderModal
+    showNewFolderModal,
+    isLoading
   } = useAppContext();
   
   // If not authenticated, show landing page
   if (!isAuthenticated) {
-    return <LandingPage />;
+    return (
+      <>
+        <LandingPage />
+        {isLoading && <LoadingIndicator />}
+      </>
+    );
   }
   
   // Render the appropriate view based on activeView state
@@ -35,6 +45,8 @@ const AppContent = () => {
       case 'newCreation':
       case 'editCreation':
         return <CreationForm />;
+      case 'youtubeImport':
+        return <YouTubeImport />;
       case 'creators':
         return userType === 'agency' ? <CreatorManagement /> : <CreatorDashboard />;
       case 'settings':
@@ -59,6 +71,7 @@ const AppContent = () => {
       </div>
       
       {showNewFolderModal && <NewFolderModal />}
+      {isLoading && <LoadingIndicator />}
     </div>
   );
 };
